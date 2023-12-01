@@ -1,0 +1,11 @@
+{
+  "arrowParens": "avoid",
+  "semi": false,
+  "plugins": [
+    "@trivago/prettier-plugin-sort-imports",
+    "plugin-prettier-sort-destructure",
+    "prettier-plugin-tailwindcss"
+  ],
+  "importOrder": ["^\\.$", "^\\.\\.$", "^\\./", "^\\.\\./", "^~/(.*)$"],
+  "importOrderSortSpecifiers": true
+}
