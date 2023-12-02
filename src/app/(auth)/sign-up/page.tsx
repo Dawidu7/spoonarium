@@ -2,6 +2,8 @@
 
 import { valibotResolver } from "@hookform/resolvers/valibot"
 import { useMutation } from "@tanstack/react-query"
+import { redirect } from "next/navigation"
+import { useTransition } from "react"
 import { useForm } from "react-hook-form"
 import { Button } from "~/components/ui/button"
 import {
@@ -22,6 +24,7 @@ import {
 import { Input, InputPhone } from "~/components/ui/input"
 import { ProgressPassword } from "~/components/ui/progress"
 import { Spinner } from "~/components/ui/spinner"
+import { useToast } from "~/components/ui/use-toast"
 import { signUpSchema } from "~/lib/schemas"
 import type { SignUpData } from "~/lib/schemas"
 import { signUp } from "~/server/actions"
@@ -36,12 +39,41 @@ const defaultValues = {
 }
 
 export default function SignUp() {
+  const { toast } = useToast()
+  const [, startTransition] = useTransition()
   const form = useForm({
     defaultValues,
     resolver: valibotResolver(signUpSchema),
   })
   const { isPending, mutate } = useMutation({
     mutationFn: signUp,
+    onSuccess: data => {
+      if (!data.success) {
+        Object.entries(data.errors!).forEach(([key, message]) => {
+          if (!message) return
+
+          form.setError(key as keyof typeof defaultValues, { message })
+        })
+        return
+      }
+
+      toast({
+        title: "Signed Up",
+        description: "You have successfully signed up.",
+        variant: "success",
+      })
+
+      startTransition(() => {
+        redirect(`/`)
+      })
+    },
+    onError: error => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      })
+    },
   })
 
   function onSubmit(data: SignUpData) {

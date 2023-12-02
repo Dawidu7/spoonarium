@@ -21,6 +21,7 @@ export const users = mysqlTable(
     firstName: varchar("first_name", { length: 50 }).notNull(),
     lastName: varchar("last_name", { length: 50 }).notNull(),
     isStaff: boolean("is_staff").default(false).notNull(),
+    // TODO: nationality
   },
   t => ({
     unq: unique().on(t.firstName, t.lastName),
