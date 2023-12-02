@@ -9,7 +9,7 @@ export async function getSession() {
   const session = await authRequest.validate()
 
   return {
-    session,
+    ...session,
     user: session
       ? ({
           ...session.user,

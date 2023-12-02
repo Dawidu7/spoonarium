@@ -46,6 +46,10 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -61,13 +65,21 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        spinner: {
+          "0%, 55%": { backgroundColor: "hsl(var(--spinner-line))" },
+          "1%": { backgroundColor: "hsl(var(--spinner-line-active))" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        spinner: "spinner infinite",
       },
       fontFamily: {
         "open-sans": ["var(--font-open-sans)"],
+      },
+      transitionDuration: {
+        250: "250ms",
       },
     },
   },
