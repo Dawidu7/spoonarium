@@ -1,11 +1,12 @@
 "use server"
 
+import { LuciaError } from "lucia"
 import type { QueryError } from "mysql2/promise"
 import * as context from "next/headers"
 import { safeParse } from "valibot"
 import { auth } from "./auth/lucia"
-import { signUpSchema } from "~/lib/schemas"
-import type { SignUpData } from "~/lib/schemas"
+import { signInSchema, signUpSchema } from "~/lib/schemas"
+import type { SignInData, SignUpData } from "~/lib/schemas"
 
 export async function signUp(data: SignUpData) {
   // Input validation
@@ -91,6 +92,52 @@ export async function signUp(data: SignUpData) {
             phone: `Phone '${value}' is already taken.`,
           },
         }
+    }
+
+    throw new Error("Internal Server Error.")
+  }
+}
+
+export async function signIn(data: SignInData) {
+  // Input validation
+  const result = safeParse(signInSchema, data)
+  if (!result.success) {
+    return {
+      success: false,
+      errors: result.issues.reduce<Record<string, string>>(
+        (acc, { message, path }) => ({ ...acc, [path![0].key]: message }),
+        {},
+      ),
+    }
+  }
+
+  try {
+    const { userId } = await auth.useKey(
+      data.login.includes("@") ? "email" : "phone",
+      data.login,
+      data.password,
+    )
+
+    const session = await auth.createSession({
+      userId,
+      attributes: {},
+    })
+
+    const authRequest = auth.handleRequest("POST", context)
+    authRequest.setSession(session)
+
+    const { user } = await authRequest.validate()
+
+    return { success: true, user }
+  } catch (error) {
+    console.error(error)
+
+    if (
+      error instanceof LuciaError &&
+      (error.message === "AUTH_INVALID_KEY_ID" ||
+        error.message === "AUTH_INVALID_PASSWORD")
+    ) {
+      throw new Error("Invalid credentials.")
     }
 
     throw new Error("Internal Server Error.")

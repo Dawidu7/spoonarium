@@ -10,7 +10,7 @@ export default function Navbar({ user }: { user: User | null }) {
   if (user) return null
 
   return (
-    <header className="border-b py-4">
+    <header className="mb-8 border-b py-4">
       <div className="container flex items-center justify-between">
         <Button
           asChild

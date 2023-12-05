@@ -41,3 +41,10 @@ export const signUpSchema = object({
 })
 
 export type SignUpData = Output<typeof signUpSchema>
+
+export const signInSchema = object({
+  login: string([minLength(1, "Field is required.")]),
+  password: string([minLength(1, "Field is required.")]),
+})
+
+export type SignInData = Output<typeof signInSchema>
