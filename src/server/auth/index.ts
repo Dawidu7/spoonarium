@@ -14,6 +14,7 @@ export async function getSession() {
       ? ({
           ...session.user,
           id: session.user.userId,
+          userId: undefined,
         } as User)
       : null,
   }

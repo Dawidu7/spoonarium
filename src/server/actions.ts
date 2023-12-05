@@ -96,3 +96,17 @@ export async function signUp(data: SignUpData) {
     throw new Error("Internal Server Error.")
   }
 }
+
+export async function signOut() {
+  const authRequest = auth.handleRequest("POST", context)
+  const session = await authRequest.validate()
+
+  if (!session) {
+    return { success: false }
+  }
+
+  await auth.invalidateSession(session.sessionId)
+  authRequest.setSession(null)
+
+  return { success: true }
+}

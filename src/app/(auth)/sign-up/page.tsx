@@ -2,6 +2,8 @@
 
 import { valibotResolver } from "@hookform/resolvers/valibot"
 import { useMutation } from "@tanstack/react-query"
+import { CornerDownLeft } from "lucide-react"
+import Link from "next/link"
 import { redirect } from "next/navigation"
 import { useTransition } from "react"
 import { useForm } from "react-hook-form"
@@ -88,6 +90,16 @@ export default function SignUp() {
   return (
     <Card className="mx-auto max-w-sm">
       <CardHeader>
+        <Button
+          asChild
+          variant="link"
+          className="w-fit space-x-1 p-0 text-muted-foreground hover:text-white"
+        >
+          <Link href="/">
+            <CornerDownLeft />
+            <span>Return to Home</span>
+          </Link>
+        </Button>
         <CardTitle>Sign Up</CardTitle>
         <CardDescription>
           Create your free <b>spoonarium</b> account!
