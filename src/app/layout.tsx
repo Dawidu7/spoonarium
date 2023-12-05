@@ -25,10 +25,10 @@ export default async function RootLayout({
       <body className={`${openSans.className} font-open-sans`}>
         <Providers>
           <Navbar user={user} />
-          <main className="flex">
+          <div className="flex">
             <Sidebar user={user} />
-            {children}
-          </main>
+            <main className="grid w-full place-items-center">{children}</main>
+          </div>
           <Toaster />
         </Providers>
       </body>

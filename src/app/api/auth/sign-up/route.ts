@@ -2,29 +2,16 @@ import type { QueryError } from "mysql2"
 import * as context from "next/headers"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { safeParse } from "valibot"
-import { signUpSchema } from "~/lib/schemas"
+import { getErrors, signUpSchema } from "~/lib/schemas"
 import type { SignUpData } from "~/lib/schemas"
 import { auth } from "~/server/auth/lucia"
 
 export async function POST(request: NextRequest) {
   const data: SignUpData = await request.json()
 
-  const result = safeParse(signUpSchema, data)
-  if (!result.success) {
-    return NextResponse.json(
-      {
-        errors: {
-          ...result.issues.reduce<Record<string, string>>(
-            (acc, { message, path }) => ({ ...acc, [path![0].key]: message }),
-            {},
-          ),
-          passwordConfirm:
-            data.password !== data.passwordConfirm && "Passwords do not match",
-        },
-      },
-      { status: 400 },
-    )
+  const errors = getErrors(signUpSchema, data)
+  if (errors) {
+    return NextResponse.json({ errors }, { status: 400 })
   }
 
   try {

@@ -2,28 +2,18 @@ import { LuciaError } from "lucia"
 import * as context from "next/headers"
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { safeParse } from "valibot"
-import { signInSchema } from "~/lib/schemas"
+import { getErrors, signInSchema } from "~/lib/schemas"
 import type { SignInData } from "~/lib/schemas"
 import { auth } from "~/server/auth/lucia"
 
 export async function POST(request: NextRequest) {
   const data: SignInData = await request.json()
 
-  // Validate against schema
-  const result = safeParse(signInSchema, data)
-  if (!result.success) {
-    return NextResponse.json(
-      {
-        errors: result.issues.map(({ path, message }) => ({
-          [path![0].key]: message,
-        })),
-      },
-      { status: 400 },
-    )
+  const errors = getErrors(signInSchema, data)
+  if (errors) {
+    return NextResponse.json({ errors }, { status: 400 })
   }
 
-  // Authenticate user
   try {
     const key = await auth.useKey(
       data.login.includes("@") ? "email" : "phone",

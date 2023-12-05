@@ -4,16 +4,12 @@ import { valibotResolver } from "@hookform/resolvers/valibot"
 import { useMutation } from "@tanstack/react-query"
 import axios from "axios"
 import type { AxiosError, AxiosResponse } from "axios"
-import Link from "next/link"
-import { redirect } from "next/navigation"
-import { useTransition } from "react"
 import { useForm } from "react-hook-form"
 import { Button } from "~/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -22,53 +18,39 @@ import {
 import { Input } from "~/components/ui/input"
 import { Spinner } from "~/components/ui/spinner"
 import { useToast } from "~/components/ui/use-toast"
-import { signInSchema } from "~/lib/schemas"
-import type { SignInData } from "~/lib/schemas"
+import { authorSchema } from "~/lib/schemas"
+import type { AuthorData } from "~/lib/schemas"
 import { revalidate } from "~/server/actions"
 
 const defaultValues = {
-  login: "",
-  password: "",
+  name: "",
 }
 
-export default function SignUp() {
+export default function Authors() {
   const { toast } = useToast()
-  const [, startTransition] = useTransition()
   const form = useForm({
     defaultValues,
-    resolver: valibotResolver(signInSchema),
+    resolver: valibotResolver(authorSchema),
   })
   const { isPending, mutate } = useMutation<
     AxiosResponse,
     AxiosError<{
       errors?: Record<keyof typeof defaultValues, string | null>
     }>,
-    SignInData
+    AuthorData
   >({
-    mutationFn: data => axios.post("/api/auth/sign-in", data),
+    mutationFn: data => axios.post("/api/authors", data),
     onSuccess: () => {
       toast({
-        title: "Signed In",
-        description: "You have successfully signed in.",
+        title: "Success",
+        description: "Author successfully added.",
         variant: "success",
       })
 
-      startTransition(() => {
-        revalidate("/")
-        redirect("/")
-      })
+      revalidate("/authors")
     },
     onError: error => {
       if (!error.response) return
-
-      if (error.response.status === 401) {
-        toast({
-          title: "Error",
-          description: "Invalid credentials",
-          variant: "destructive",
-        })
-        return
-      }
 
       if (error.response.status === 500) {
         toast({
@@ -76,7 +58,6 @@ export default function SignUp() {
           description: "Something went wrong.",
           variant: "destructive",
         })
-        return
       }
 
       const errors = error.response.data.errors
@@ -94,9 +75,9 @@ export default function SignUp() {
   })
 
   return (
-    <Card className="mx-auto w-full max-w-xs">
+    <Card>
       <CardHeader>
-        <CardTitle>Sign In</CardTitle>
+        <CardTitle>Add Authors</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -106,25 +87,12 @@ export default function SignUp() {
           >
             <FormField
               control={form.control}
-              name="login"
+              name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email or Phone Number</FormLabel>
+                  <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="password" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -138,15 +106,9 @@ export default function SignUp() {
             >
               <>
                 {isPending && <Spinner className="mr-2" />}
-                Create Account
+                Add Author
               </>
             </Button>
-            <FormDescription className="text-center">
-              Don{"'"}t have an account?{" "}
-              <Button asChild variant="link" className="p-0">
-                <Link href="/sign-in">Sign Up</Link>
-              </Button>
-            </FormDescription>
           </form>
         </Form>
       </CardContent>

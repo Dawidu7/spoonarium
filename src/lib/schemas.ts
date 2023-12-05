@@ -8,7 +8,21 @@ import {
   object,
   string,
 } from "valibot"
-import type { Output } from "valibot"
+import type { BaseSchema, Output } from "valibot"
+import { safeParse } from "valibot"
+
+export function getErrors<T>(schema: BaseSchema<any, any>, data: T) {
+  const result = safeParse(schema, data)
+  return !result.success
+    ? result.issues.reduce<Record<string, string>>(
+        (acc, { path, message }) => ({
+          ...acc,
+          [path![0].key]: message,
+        }),
+        {},
+      )
+    : null
+}
 
 export const signUpSchema = object({
   firstName: string([
@@ -48,3 +62,9 @@ export const signInSchema = object({
 })
 
 export type SignInData = Output<typeof signInSchema>
+
+export const authorSchema = object({
+  name: string([minLength(1, "Field is required.")]),
+})
+
+export type AuthorData = Output<typeof authorSchema>
