@@ -2,6 +2,8 @@
 
 import { valibotResolver } from "@hookform/resolvers/valibot"
 import { useMutation } from "@tanstack/react-query"
+import axios from "axios"
+import type { AxiosError, AxiosResponse } from "axios"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { useTransition } from "react"
@@ -29,7 +31,7 @@ import { Spinner } from "~/components/ui/spinner"
 import { useToast } from "~/components/ui/use-toast"
 import { signUpSchema } from "~/lib/schemas"
 import type { SignUpData } from "~/lib/schemas"
-import { signUp } from "~/server/actions"
+import { revalidate } from "~/server/actions"
 
 const defaultValues = {
   firstName: "",
@@ -47,18 +49,13 @@ export default function SignUp() {
     defaultValues,
     resolver: valibotResolver(signUpSchema),
   })
-  const { isPending, mutate } = useMutation({
-    mutationFn: signUp,
-    onSuccess: data => {
-      if (!data.success) {
-        Object.entries(data.errors!).forEach(([key, message]) => {
-          if (!message) return
-
-          form.setError(key as keyof typeof defaultValues, { message })
-        })
-        return
-      }
-
+  const { isPending, mutate } = useMutation<
+    AxiosResponse<{ username: string }>,
+    AxiosError<{ errors: Record<keyof typeof defaultValues, string | null> }>,
+    SignUpData
+  >({
+    mutationFn: data => axios.post("/api/auth/sign-up", data),
+    onSuccess: () => {
       toast({
         title: "Signed Up",
         description: "You have successfully signed up.",
@@ -66,14 +63,19 @@ export default function SignUp() {
       })
 
       startTransition(() => {
-        redirect(`/`)
+        revalidate("/")
+        redirect("/")
       })
     },
     onError: error => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+      const errors = error.response?.data.errors!
+
+      Object.entries(errors).forEach(([key, value]) => {
+        if (!value) return
+
+        form.setError(key as keyof typeof defaultValues, {
+          message: value,
+        })
       })
     },
   })

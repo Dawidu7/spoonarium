@@ -2,6 +2,8 @@
 
 import { valibotResolver } from "@hookform/resolvers/valibot"
 import { useMutation } from "@tanstack/react-query"
+import axios from "axios"
+import type { AxiosError, AxiosResponse } from "axios"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { useTransition } from "react"
@@ -21,7 +23,8 @@ import { Input } from "~/components/ui/input"
 import { Spinner } from "~/components/ui/spinner"
 import { useToast } from "~/components/ui/use-toast"
 import { signInSchema } from "~/lib/schemas"
-import { signIn } from "~/server/actions"
+import type { SignInData } from "~/lib/schemas"
+import { revalidate } from "~/server/actions"
 
 const defaultValues = {
   login: "",
@@ -35,18 +38,15 @@ export default function SignUp() {
     defaultValues,
     resolver: valibotResolver(signInSchema),
   })
-  const { isPending, mutate } = useMutation({
-    mutationFn: signIn,
-    onSuccess: data => {
-      if (!data.success) {
-        Object.entries(data.errors!).forEach(([key, message]) => {
-          if (!message) return
-
-          form.setError(key as keyof typeof defaultValues, { message })
-        })
-        return
-      }
-
+  const { isPending, mutate } = useMutation<
+    AxiosResponse,
+    AxiosError<{
+      errors?: Record<keyof typeof defaultValues, string | null>
+    }>,
+    SignInData
+  >({
+    mutationFn: data => axios.post("/api/auth/sign-in", data),
+    onSuccess: () => {
       toast({
         title: "Signed In",
         description: "You have successfully signed in.",
@@ -54,14 +54,41 @@ export default function SignUp() {
       })
 
       startTransition(() => {
-        redirect(`/`)
+        revalidate("/")
+        redirect("/")
       })
     },
     onError: error => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+      if (!error.response) return
+
+      if (error.response.status === 401) {
+        toast({
+          title: "Error",
+          description: "Invalid credentials",
+          variant: "destructive",
+        })
+        return
+      }
+
+      if (error.response.status === 500) {
+        toast({
+          title: "Error",
+          description: "Something went wrong. Please try again.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      const errors = error.response?.data.errors
+
+      if (!errors) return
+
+      Object.entries(errors).forEach(([key, value]) => {
+        if (!value) return
+
+        form.setError(key as keyof typeof defaultValues, {
+          message: value,
+        })
       })
     },
   })

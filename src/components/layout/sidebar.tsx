@@ -1,6 +1,5 @@
 "use client"
 
-import { useMutation } from "@tanstack/react-query"
 import {
   BookOpenText,
   BookUser,
@@ -11,10 +10,7 @@ import {
   TableProperties,
   Users,
 } from "lucide-react"
-import { useTheme } from "next-themes"
 import Link from "next/link"
-import { redirect, usePathname } from "next/navigation"
-import { useTransition } from "react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,44 +25,14 @@ import {
 import { Button } from "../ui/button"
 import { Label } from "../ui/label"
 import { ThemeSwitch } from "../ui/switch"
-import { useToast } from "../ui/use-toast"
-import { cn } from "~/lib/utils"
-import { signOut } from "~/server/actions"
 import type { User } from "~/server/db/schema"
 
 export default function Sidebar({ user }: { user: User | null }) {
-  const { theme, setTheme } = useTheme()
-  const pathname = usePathname()
-  const { toast } = useToast()
-  const [, startTransition] = useTransition()
-  const { mutate } = useMutation({
-    mutationFn: signOut,
-    onSuccess: ({ success }) => {
-      if (!success) {
-        toast({
-          title: "Error",
-          description: "Something went wrong. Please try again.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      toast({
-        title: "Success",
-        description: "You have successfully signed out.",
-        variant: "success",
-      })
-
-      startTransition(() => {
-        redirect(`/`)
-      })
-    },
-  })
-
   if (!user) return null
 
   const tabs = [
     {
+      isHidden: !user.isStaff,
       name: "staff",
       items: [
         { name: "authors", icon: BookUser },
@@ -101,61 +67,64 @@ export default function Sidebar({ user }: { user: User | null }) {
           </Link>
         </Button>
         <nav className="mt-12 space-y-16">
-          {tabs.map(({ name, items }) => (
-            <div key={name}>
-              <Label
-                htmlFor={name}
-                className="text-xs uppercase text-muted-foreground"
-              >
-                {name}
-              </Label>
-              <ul id={name} className="space-y-2">
-                {items.map(({ name, icon: Icon }) => (
-                  <li key={name}>
-                    <Button
-                      asChild
-                      variant="ghost"
-                      className="flex items-center justify-start gap-2 px-1.5 capitalize"
-                    >
-                      <Link href={`/${name}`}>
-                        <Icon />
-                        {name}
-                      </Link>
-                    </Button>
-                  </li>
-                ))}
-                {name === "profile" && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="flex w-full items-center justify-start gap-2 px-1.5"
-                      >
-                        <LogOut />
-                        <span>Logout</span>
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Sign Out</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to sign out?
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <form action={() => mutate()}>
-                          <AlertDialogAction asChild>
-                            <Button type="submit">Sign Out</Button>
-                          </AlertDialogAction>
-                        </form>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-              </ul>
-            </div>
-          ))}
+          {tabs.map(
+            ({ name, items, isHidden }) =>
+              !isHidden && (
+                <div key={name}>
+                  <Label
+                    htmlFor={name}
+                    className="text-xs uppercase text-muted-foreground"
+                  >
+                    {name}
+                  </Label>
+                  <ul id={name} className="space-y-2">
+                    {items.map(({ name, icon: Icon }) => (
+                      <li key={name}>
+                        <Button
+                          asChild
+                          variant="ghost"
+                          className="flex items-center justify-start gap-2 px-1.5 capitalize"
+                        >
+                          <Link href={`/${name}`}>
+                            <Icon />
+                            {name}
+                          </Link>
+                        </Button>
+                      </li>
+                    ))}
+                    {name === "profile" && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            className="flex w-full items-center justify-start gap-2 px-1.5"
+                          >
+                            <LogOut />
+                            <span>Logout</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Sign Out</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to sign out?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <form action="/api/auth/sign-out" method="POST">
+                              <AlertDialogAction asChild>
+                                <Button type="submit">Sign Out</Button>
+                              </AlertDialogAction>
+                            </form>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </ul>
+                </div>
+              ),
+          )}
         </nav>
       </div>
       <ThemeSwitch />
